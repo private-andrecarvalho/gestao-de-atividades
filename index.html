@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow - Gestão de Atividades</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbars and transition enhancements */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased selection:bg-blue-100 selection:text-blue-700">
+
+    <!-- Global Toast Notifications -->
+    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- AUTHENTICATION SCREEN -->
+    <div id="authScreen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-4">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100 animate-fade-in">
+            <div class="p-8 text-center bg-slate-900 text-white relative">
+                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-600 text-white mb-3 shadow-lg shadow-blue-500/30">
+                    <i class="fa-solid fa-list-check text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight">TaskFlow</h1>
+                <p class="text-xs text-slate-400 mt-1">Gestão inteligente de atividades e metas</p>
+            </div>
+
+            <div class="p-8">
+                <!-- LOGIN FORM -->
+                <form id="loginForm" class="space-y-4">
+                    <h2 class="text-xl font-bold text-slate-800 mb-2 text-center">Acesse sua conta</h2>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">E-mail</label>
+                        <div class="relative">
+                            <i class="fa-regular fa-envelope absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+                            <input type="email" id="loginEmail" required class="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" placeholder="seu@email.com">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Senha (6 dígitos numéricos)</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-lock absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+                            <input type="password" id="loginPassword" maxlength="6" inputmode="numeric" pattern="\d{6}" required class="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" placeholder="******">
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="button" id="btnForgotPass" class="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline">Esqueceu sua senha?</button>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 transition duration-150">Entrar no Sistema</button>
+                    
+                    <p class="text-center text-xs text-slate-500 pt-4 border-t border-slate-100">
+                        Ainda não tem conta? <button type="button" id="btnShowSignup" class="text-blue-600 font-semibold hover:underline">Cadastrar-se</button>
+                    </p>
+                </form>
+
+                <!-- SIGNUP FORM -->
+                <form id="signupForm" class="space-y-4 hidden">
+                    <h2 class="text-xl font-bold text-slate-800 mb-2 text-center">Criar nova conta</h2>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">E-mail</label>
+                        <div class="relative">
+                            <i class="fa-regular fa-envelope absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+                            <input type="email" id="signupEmail" required class="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" placeholder="seu@email.com">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Senha (Exatamente 6 números)</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-lock absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+                            <input type="password" id="signupPassword" maxlength="6" inputmode="numeric" pattern="\d{6}" required class="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" placeholder="123456">
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1">Apenas números. Ex: 123456</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Confirmar Senha</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-shield-halved absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+                            <input type="password" id="signupConfirmPassword" maxlength="6" inputmode="numeric" pattern="\d{6}" required class="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" placeholder="123456">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/25 transition duration-150">Criar Minha Conta</button>
+                    
+                    <p class="text-center text-xs text-slate-500 pt-4 border-t border-slate-100">
+                        Já possui conta? <button type="button" id="btnShowLogin" class="text-blue-600 font-semibold hover:underline">Voltar ao Login</button>
+                    </p>
+                </form>
+
+                <!-- FORGOT PASSWORD FORM -->
+                <form id="forgotForm" class="space-y-4 hidden">
+                    <h2 class="text-xl font-bold text-slate-800 mb-1 text-center">Recuperar Senha</h2>
+                    <p class="text-xs text-slate-500 text-center mb-4">Informe seu e-mail cadastrado para redefinir sua senha numérica.</p>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">E-mail Cadastrado</label>
+                        <div class="relative">
+                            <i class="fa-regular fa-envelope absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+                            <input type="email" id="resetEmail" required class="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" placeholder="seu@email.com">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Nova Senha (6 números)</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-key absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+                            <input type="password" id="resetNewPassword" maxlength="6" inputmode="numeric" pattern="\d{6}" required class="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" placeholder="6 dígitos">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Confirmar Nova Senha</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-shield-halved absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+                            <input type="password" id="resetConfirmPassword" maxlength="6" inputmode="numeric" pattern="\d{6}" required class="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" placeholder="6 dígitos">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-semibold rounded-xl shadow-lg shadow-amber-500/25 transition duration-150">Redefinir Senha</button>
+                    
+                    <p class="text-center text-xs text-slate-500 pt-4 border-t border-slate-100">
+                        Lembrou da senha? <button type="button" id="btnForgotBackToLogin" class="text-blue-600 font-semibold hover:underline">Ir para Login</button>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN SYSTEM DASHBOARD -->
+    <div id="mainDashboard" class="hidden flex-1 flex flex-col min-h-screen">
+        <!-- Top Header Navigation -->
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <!-- App Logo -->
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+                            <i class="fa-solid fa-list-check text-lg"></i>
+                        </div>
+                        <div>
+                            <span class="text-lg font-bold text-slate-900 tracking-tight">TaskFlow</span>
+                            <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium ml-2 hidden sm:inline-block">Gestão de Projetos</span>
+                        </div>
+                    </div>
+
+                    <!-- User menu & Logout -->
+                    <div class="flex items-center gap-4">
+                        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full text-xs font-medium text-slate-700">
+                            <i class="fa-regular fa-circle-user text-slate-500 text-sm"></i>
+                            <span id="userDisplayEmail">usuario@email.com</span>
+                        </div>
+                        <button id="btnLogout" class="text-xs text-rose-600 hover:text-rose-700 font-medium flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-rose-50 transition">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span>Sair</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            
+            <!-- Dashboard Overview Stats Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total de Atividades</p>
+                        <h3 id="statTotal" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Em Andamento</p>
+                        <h3 id="statInProgress" class="text-2xl font-bold text-amber-600 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-spinner"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Concluídas</p>
+                        <h3 id="statCompleted" class="text-2xl font-bold text-emerald-600 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total de Tarefas</p>
+                        <h3 id="statTotalTasks" class="text-2xl font-bold text-indigo-600 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-list-ul"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toolbar: Tabs & Search & Add Button -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+                <!-- Navigation Tabs -->
+                <div class="flex bg-slate-100 p-1 rounded-xl w-full md:w-auto">
+                    <button id="tabPending" class="tab-btn flex-1 md:flex-initial px-4 py-2 text-xs font-semibold rounded-lg transition text-slate-600 hover:text-slate-900">
+                        <i class="fa-solid fa-spinner mr-1.5 text-amber-500"></i>Em Andamento
+                    </button>
+                    <button id="tabCompleted" class="tab-btn flex-1 md:flex-initial px-4 py-2 text-xs font-semibold rounded-lg transition text-slate-600 hover:text-slate-900">
+                        <i class="fa-solid fa-circle-check mr-1.5 text-emerald-500"></i>Concluídas
+                    </button>
+                    <button id="tabAll" class="tab-btn flex-1 md:flex-initial px-4 py-2 text-xs font-semibold rounded-lg transition bg-white text-blue-600 shadow-sm">
+                        <i class="fa-solid fa-bars-staggered mr-1.5"></i>Todas as Atividades
+                    </button>
+                </div>
+
+                <!-- Search and Action -->
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <div class="relative flex-1 md:w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="searchInput" placeholder="Buscar por nome..." class="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                    </div>
+                    <button id="btnOpenNewActivity" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-semibold rounded-xl flex items-center gap-2 shadow-md shadow-blue-500/20 whitespace-nowrap transition">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Nova Atividade</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Activity Cards Container -->
+            <div id="activitiesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamic cards injected via JavaScript -->
+            </div>
+
+            <!-- Empty State Display -->
+            <div id="emptyState" class="hidden flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-dashed border-slate-300 p-8">
+                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4 text-2xl">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <h3 class="text-base font-semibold text-slate-800">Nenhuma atividade encontrada</h3>
+                <p class="text-xs text-slate-500 max-w-sm mt-1">Crie sua primeira atividade ou altere os filtros de busca para visualizar os registros.</p>
+                <button id="btnEmptyStateAdd" class="mt-4 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition">
+                    + Criar Atividade
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL: CREATE / EDIT ACTIVITY -->
+    <div id="modalActivity" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-fade-in">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+                <h3 id="modalActivityTitle" class="text-base font-bold text-slate-800">Nova Atividade</h3>
+                <button class="modal-close text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="formActivity" class="p-6 space-y-4">
+                <input type="hidden" id="activityId">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nome da Atividade *</label>
+                    <input type="text" id="activityName" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ex: Projeto Redesenho do Site">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Descrição *</label>
+                    <textarea id="activityDesc" rows="3" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Detalhamento sobre os objetivos desta atividade..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Foto de Perfil da Atividade (Opcional)</label>
+                    <div class="flex items-center gap-4">
+                        <div id="activityImagePreview" class="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-xs">
+                            <i class="fa-regular fa-user text-slate-400 text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <input type="file" id="activityImageInput" accept="image/*" class="hidden">
+                            <label for="activityImageInput" class="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+                                <i class="fa-solid fa-upload"></i> Escolher Foto
+                            </label>
+                            <button type="button" id="btnRemoveImage" class="hidden text-xs text-rose-600 hover:underline ml-2">Remover</button>
+                            <p class="text-[10px] text-slate-400 mt-1">Formatos suportados: PNG, JPG (convertido em Base64)</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                    <button type="button" class="modal-close px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md shadow-blue-500/20">Salvar Atividade</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CREATE / EDIT SUBACTIVITY -->
+    <div id="modalSubactivity" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-fade-in">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+                <h3 id="modalSubactivityTitle" class="text-base font-bold text-slate-800">Nova Subatividade</h3>
+                <button class="modal-close text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="formSubactivity" class="p-6 space-y-4">
+                <input type="hidden" id="subactivityId">
+                <input type="hidden" id="subactivityParentId">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nome da Subatividade *</label>
+                    <input type="text" id="subactivityName" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ex: Mapeamento de Telas">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Descrição</label>
+                    <textarea id="subactivityDesc" rows="3" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Descrição das etapas necessárias..."></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                    <button type="button" class="modal-close px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md shadow-blue-500/20">Salvar Subatividade</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CREATE / EDIT TASK -->
+    <div id="modalTask" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-fade-in">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+                <h3 id="modalTaskTitle" class="text-base font-bold text-slate-800">Nova Tarefa</h3>
+                <button class="modal-close text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="formTask" class="p-6 space-y-4">
+                <input type="hidden" id="taskId">
+                <input type="hidden" id="taskParentSubId">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nome da Tarefa *</label>
+                    <input type="text" id="taskName" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ex: Criar protótipo no Figma">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Descrição</label>
+                    <textarea id="taskDesc" rows="2" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Instruções específicas para esta tarefa..."></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                    <button type="button" class="modal-close px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md shadow-blue-500/20">Salvar Tarefa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CONFIRM DELETE (CASCADE WARNING) -->
+    <div id="modalConfirm" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden animate-fade-in p-6 text-center">
+            <div class="w-14 h-14 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 id="confirmTitle" class="text-lg font-bold text-slate-800 mb-2">Confirmar Exclusão</h3>
+            <p id="confirmMessage" class="text-xs text-slate-500 mb-6">Esta ação removerá o item e todas as suas subatividades e tarefas vinculadas. Não é possível desfazer.</p>
+            <div class="flex gap-3">
+                <button id="btnCancelConfirm" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition">Cancelar</button>
+                <button id="btnExecuteConfirm" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-rose-500/20 transition">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEYS = {
+            USERS: 'taskflow_users_v1',
+            SESSION: 'taskflow_session_v1',
+            ACTIVITIES: 'taskflow_activities_v1'
+        };
+
+        // State variables
+        let currentUser = null;
+        let activitiesData = [];
+        let activeTab = 'all'; // 'pending', 'completed', 'all'
+        let searchQuery = '';
+        let currentBase64Image = '';
+        let confirmCallback = null;
+        let collapsedActivities = new Set();
+        let collapsedSubactivities = new Set();
+
+        // Password hashing helper (SHA-256 using SubtleCrypto with fallback)
+        async function hashPassword(str) {
+            try {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(str + "_taskflow_salt");
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            } catch (e) {
+                // Simple fallback string transformation if SubtleCrypto isn't available
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    hash = (hash << 5) - hash + str.charCodeAt(i);
+                    hash |= 0;
+                }
+                return 'h_' + Math.abs(hash);
+            }
+        }
+
+        function getUsers() {
+            return JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+        }
+
+        function saveUsers(users) {
+            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+        }
+
+        function getSessionUser() {
+            return JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSION) || 'null');
+        }
+
+        function setSessionUser(email) {
+            if (email) {
+                localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify({ email }));
+            } else {
+                localStorage.removeItem(STORAGE_KEYS.SESSION);
+            }
+        }
+
+        function loadActivities() {
+            if (!currentUser) return [];
+            const allData = JSON.parse(localStorage.getItem(STORAGE_KEYS.ACTIVITIES) || '{}');
+            return allData[currentUser.email] || [];
+        }
+
+        function saveActivities() {
+            if (!currentUser) return;
+            const allData = JSON.parse(localStorage.getItem(STORAGE_KEYS.ACTIVITIES) || '{}');
+            allData[currentUser.email] = activitiesData;
+            localStorage.setItem(STORAGE_KEYS.ACTIVITIES, JSON.stringify(allData));
+        }
+
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const icons = {
+                success: 'fa-circle-check text-emerald-500',
+                error: 'fa-circle-xmark text-rose-500',
+                warning: 'fa-triangle-exclamation text-amber-500',
+                info: 'fa-circle-info text-blue-500'
+            };
+
+            const borderColors = {
+                success: 'border-emerald-200 bg-emerald-50/90',
+                error: 'border-rose-200 bg-rose-50/90',
+                warning: 'border-amber-200 bg-amber-50/90',
+                info: 'border-blue-200 bg-blue-50/90'
+            };
+
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border ${borderColors[type]} shadow-lg backdrop-blur-md text-slate-800 text-xs font-medium animate-fade-in transition duration-300`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icons[type]} text-base"></i>
+                <span class="flex-1">${message}</span>
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            `;
+
+            toastContainer.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function showConfirmModal(title, message, onConfirm) {
+            document.getElementById('confirmTitle').innerText = title;
+            document.getElementById('confirmMessage').innerText = message;
+            confirmCallback = onConfirm;
+            document.getElementById('modalConfirm').classList.remove('hidden');
+        }
+
+        document.getElementById('btnCancelConfirm').addEventListener('click', () => {
+            document.getElementById('modalConfirm').classList.add('hidden');
+            confirmCallback = null;
+        });
+
+        document.getElementById('btnExecuteConfirm').addEventListener('click', () => {
+            if (typeof confirmCallback === 'function') {
+                confirmCallback();
+            }
+            document.getElementById('modalConfirm').classList.add('hidden');
+            confirmCallback = null;
+        });
+
+        // Password validation regex: exactly 6 digits
+        const DIGIT_6_REGEX = /^\d{6}$/;
+
+        // Toggle Auth Forms
+        document.getElementById('btnShowSignup').addEventListener('click', () => {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('signupForm').classList.remove('hidden');
+        });
+
+        document.getElementById('btnShowLogin').addEventListener('click', () => {
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+        });
+
+        document.getElementById('btnForgotPass').addEventListener('click', () => {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('forgotForm').classList.remove('hidden');
+        });
+
+        document.getElementById('btnForgotBackToLogin').addEventListener('click', () => {
+            document.getElementById('forgotForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+        });
+
+        // Signup Handler
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+            const password = document.getElementById('signupPassword').value.trim();
+            const confirmPassword = document.getElementById('signupConfirmPassword').value.trim();
+
+            if (!DIGIT_6_REGEX.test(password)) {
+                showToast('A senha deve conter exatamente 6 dígitos numéricos (sem letras ou caracteres especiais).', 'error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showToast('A confirmação de senha não coincide com a senha digitada.', 'error');
+                return;
+            }
+
+            const users = getUsers();
+            if (users.some(u => u.email === email)) {
+                showToast('Este e-mail já está cadastrado no sistema.', 'warning');
+                return;
+            }
+
+            const passwordHash = await hashPassword(password);
+            users.push({ email, passwordHash, createdAt: new Date().toISOString() });
+            saveUsers(users);
+
+            showToast('Conta criada com sucesso! Faça login para continuar.', 'success');
+            document.getElementById('signupForm').reset();
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+        });
+
+        // Login Handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+            const password = document.getElementById('loginPassword').value.trim();
+
+            if (!DIGIT_6_REGEX.test(password)) {
+                showToast('A senha deve ter exatamente 6 números.', 'error');
+                return;
+            }
+
+            const users = getUsers();
+            const user = users.find(u => u.email === email);
+            if (!user) {
+                showToast('Usuário não encontrado com este e-mail.', 'error');
+                return;
+            }
+
+            const inputHash = await hashPassword(password);
+            if (user.passwordHash !== inputHash) {
+                showToast('Senha incorreta. Verifique os 6 dígitos.', 'error');
+                return;
+            }
+
+            // Successful Login
+            currentUser = { email: user.email };
+            setSessionUser(user.email);
+            showToast(`Bem-vindo(a) de volta!`, 'success');
+            initDashboard();
+        });
+
+        // Forgot Password Reset Handler
+        document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('resetEmail').value.trim().toLowerCase();
+            const newPassword = document.getElementById('resetNewPassword').value.trim();
+            const confirmPassword = document.getElementById('resetConfirmPassword').value.trim();
+
+            const users = getUsers();
+            const userIndex = users.findIndex(u => u.email === email);
+
+            if (userIndex === -1) {
+                showToast('O e-mail informado não consta na base de usuários.', 'error');
+                return;
+            }
+
+            if (!DIGIT_6_REGEX.test(newPassword)) {
+                showToast('A nova senha deve ter exatamente 6 dígitos numéricos.', 'error');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showToast('A confirmação de senha não confere.', 'error');
+                return;
+            }
+
+            const newHash = await hashPassword(newPassword);
+            users[userIndex].passwordHash = newHash;
+            saveUsers(users);
+
+            showToast('Senha redefinida com sucesso! Acesse com sua nova senha.', 'success');
+            document.getElementById('forgotForm').reset();
+            document.getElementById('forgotForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+        });
+
+        // Logout
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            setSessionUser(null);
+            currentUser = null;
+            document.getElementById('mainDashboard').classList.add('hidden');
+            document.getElementById('authScreen').classList.remove('hidden');
+            document.getElementById('loginForm').reset();
+            showToast('Sessão encerrada com sucesso.', 'info');
+        });
+
+        function initDashboard() {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('mainDashboard').classList.remove('hidden');
+            document.getElementById('userDisplayEmail').innerText = currentUser.email;
+
+            activitiesData = loadActivities();
+            renderDashboard();
+        }
+
+        // Search Input listener
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            searchQuery = e.target.value.trim().toLowerCase();
+            renderDashboard();
+        });
+
+        // Tab Switchers
+        const tabPending = document.getElementById('tabPending');
+        const tabCompleted = document.getElementById('tabCompleted');
+        const tabAll = document.getElementById('tabAll');
+
+        function setTab(tab) {
+            activeTab = tab;
+            [tabPending, tabCompleted, tabAll].forEach(btn => {
+                btn.className = 'tab-btn flex-1 md:flex-initial px-4 py-2 text-xs font-semibold rounded-lg transition text-slate-600 hover:text-slate-900';
+            });
+
+            if (tab === 'pending') {
+                tabPending.className = 'tab-btn flex-1 md:flex-initial px-4 py-2 text-xs font-semibold rounded-lg transition bg-white text-amber-600 shadow-sm';
+            } else if (tab === 'completed') {
+                tabCompleted.className = 'tab-btn flex-1 md:flex-initial px-4 py-2 text-xs font-semibold rounded-lg transition bg-white text-emerald-600 shadow-sm';
+            } else {
+                tabAll.className = 'tab-btn flex-1 md:flex-initial px-4 py-2 text-xs font-semibold rounded-lg transition bg-white text-blue-600 shadow-sm';
+            }
+            renderDashboard();
+        }
+
+        tabPending.addEventListener('click', () => setTab('pending'));
+        tabCompleted.addEventListener('click', () => setTab('completed'));
+        tabAll.addEventListener('click', () => setTab('all'));
+
+        // Modal helper toggling
+        const modalActivity = document.getElementById('modalActivity');
+        const modalSubactivity = document.getElementById('modalSubactivity');
+        const modalTask = document.getElementById('modalTask');
+
+        document.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', () => {
+                modalActivity.classList.add('hidden');
+                modalSubactivity.classList.add('hidden');
+                modalTask.classList.add('hidden');
+            });
+        });
+
+        // Image Base64 handling
+        const imageInput = document.getElementById('activityImageInput');
+        const imagePreview = document.getElementById('activityImagePreview');
+        const btnRemoveImage = document.getElementById('btnRemoveImage');
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 2 * 1024 * 1024) {
+                    showToast('Escolha uma imagem com menos de 2MB.', 'warning');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    currentBase64Image = evt.target.result;
+                    renderImagePreview(currentBase64Image);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        btnRemoveImage.addEventListener('click', () => {
+            currentBase64Image = '';
+            imageInput.value = '';
+            renderImagePreview('');
+        });
+
+        function renderImagePreview(src) {
+            if (src) {
+                imagePreview.innerHTML = `<img src="${src}" class="w-full h-full object-cover">`;
+                btnRemoveImage.classList.remove('hidden');
+            } else {
+                imagePreview.innerHTML = `<i class="fa-regular fa-user text-slate-400 text-xl"></i>`;
+                btnRemoveImage.classList.add('hidden');
+            }
+        }
+
+        function toggleActivityExpand(actId) {
+            if (collapsedActivities.has(actId)) {
+                collapsedActivities.delete(actId);
+            } else {
+                collapsedActivities.add(actId);
+            }
+            renderDashboard();
+        }
+
+        function toggleSubactivityExpand(subId) {
+            if (collapsedSubactivities.has(subId)) {
+                collapsedSubactivities.delete(subId);
+            } else {
+                collapsedSubactivities.add(subId);
+            }
+            renderDashboard();
+        }
+
+        // Open Activity Modal (Create)
+        document.getElementById('btnOpenNewActivity').addEventListener('click', () => openActivityModal());
+        document.getElementById('btnEmptyStateAdd').addEventListener('click', () => openActivityModal());
+
+        function openActivityModal(activity = null) {
+            document.getElementById('formActivity').reset();
+            currentBase64Image = '';
+
+            if (activity) {
+                document.getElementById('modalActivityTitle').innerText = 'Editar Atividade';
+                document.getElementById('activityId').value = activity.id;
+                document.getElementById('activityName').value = activity.name;
+                document.getElementById('activityDesc').value = activity.description;
+                currentBase64Image = activity.image || '';
+            } else {
+                document.getElementById('modalActivityTitle').innerText = 'Nova Atividade';
+                document.getElementById('activityId').value = '';
+            }
+            renderImagePreview(currentBase64Image);
+            modalActivity.classList.remove('hidden');
+        }
+
+        document.getElementById('formActivity').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('activityId').value;
+            const name = document.getElementById('activityName').value.trim();
+            const description = document.getElementById('activityDesc').value.trim();
+
+            if (!name || !description) {
+                showToast('Preencha os campos obrigatórios.', 'warning');
+                return;
+            }
+
+            if (id) {
+                // Update
+                const index = activitiesData.findIndex(a => a.id === id);
+                if (index !== -1) {
+                    activitiesData[index].name = name;
+                    activitiesData[index].description = description;
+                    activitiesData[index].image = currentBase64Image;
+                }
+                showToast('Atividade atualizada!', 'success');
+            } else {
+                // Create
+                const newActivity = {
+                    id: 'act_' + Date.now(),
+                    name,
+                    description,
+                    image: currentBase64Image,
+                    status: 'em_andamento', // 'em_andamento' or 'concluida'
+                    createdAt: new Date().toISOString(),
+                    subactivities: []
+                };
+                activitiesData.unshift(newActivity);
+                showToast('Nova atividade criada!', 'success');
+            }
+
+            saveActivities();
+            modalActivity.classList.add('hidden');
+            renderDashboard();
+        });
+
+        function deleteActivity(actId) {
+            const act = activitiesData.find(a => a.id === actId);
+            if (!act) return;
+
+            showConfirmModal(
+                'Excluir Atividade?',
+                `Deseja realmente apagar "${act.name}"? Todas as suas subatividades e tarefas serão excluídas permanentemente.`,
+                () => {
+                    activitiesData = activitiesData.filter(a => a.id !== actId);
+                    saveActivities();
+                    renderDashboard();
+                    showToast('Atividade excluída com sucesso.', 'info');
+                }
+            );
+        }
+
+        function toggleActivityStatus(actId) {
+            const act = activitiesData.find(a => a.id === actId);
+            if (act) {
+                act.status = act.status === 'concluida' ? 'em_andamento' : 'concluida';
+                saveActivities();
+                renderDashboard();
+                showToast(`Atividade marcada como ${act.status === 'concluida' ? 'Concluída' : 'Em Andamento'}.`, 'success');
+            }
+        }
+
+        function openSubactivityModal(parentId, subactivity = null) {
+            document.getElementById('formSubactivity').reset();
+            document.getElementById('subactivityParentId').value = parentId;
+
+            if (subactivity) {
+                document.getElementById('modalSubactivityTitle').innerText = 'Editar Subatividade';
+                document.getElementById('subactivityId').value = subactivity.id;
+                document.getElementById('subactivityName').value = subactivity.name;
+                document.getElementById('subactivityDesc').value = subactivity.description || '';
+            } else {
+                document.getElementById('modalSubactivityTitle').innerText = 'Nova Subatividade';
+                document.getElementById('subactivityId').value = '';
+            }
+            modalSubactivity.classList.remove('hidden');
+        }
+
+        document.getElementById('formSubactivity').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const parentId = document.getElementById('subactivityParentId').value;
+            const subId = document.getElementById('subactivityId').value;
+            const name = document.getElementById('subactivityName').value.trim();
+            const description = document.getElementById('subactivityDesc').value.trim();
+
+            const act = activitiesData.find(a => a.id === parentId);
+            if (!act) return;
+
+            if (subId) {
+                // Edit Subactivity
+                const subIndex = act.subactivities.findIndex(s => s.id === subId);
+                if (subIndex !== -1) {
+                    act.subactivities[subIndex].name = name;
+                    act.subactivities[subIndex].description = description;
+                }
+                showToast('Subatividade atualizada!', 'success');
+            } else {
+                // Create Subactivity
+                const newSub = {
+                    id: 'sub_' + Date.now(),
+                    name,
+                    description,
+                    status: 'em_andamento',
+                    tasks: []
+                };
+                act.subactivities.push(newSub);
+                showToast('Subatividade criada!', 'success');
+            }
+
+            saveActivities();
+            modalSubactivity.classList.add('hidden');
+            renderDashboard();
+        });
+
+        function deleteSubactivity(actId, subId) {
+            const act = activitiesData.find(a => a.id === actId);
+            if (!act) return;
+            const sub = act.subactivities.find(s => s.id === subId);
+
+            showConfirmModal(
+                'Excluir Subatividade?',
+                `Deseja remover "${sub.name}" e todas as tarefas associadas?`,
+                () => {
+                    act.subactivities = act.subactivities.filter(s => s.id !== subId);
+                    saveActivities();
+                    renderDashboard();
+                    showToast('Subatividade removida.', 'info');
+                }
+            );
+        }
+
+        function toggleSubactivityStatus(actId, subId) {
+            const act = activitiesData.find(a => a.id === actId);
+            if (!act) return;
+            const sub = act.subactivities.find(s => s.id === subId);
+            if (sub) {
+                sub.status = sub.status === 'concluida' ? 'em_andamento' : 'concluida';
+                // Automatically complete child tasks if subactivity is marked completed
+                if (sub.status === 'concluida' && sub.tasks) {
+                    sub.tasks.forEach(t => t.status = 'concluida');
+                }
+                saveActivities();
+                renderDashboard();
+            }
+        }
+
+        function openTaskModal(subId, task = null) {
+            document.getElementById('formTask').reset();
+            document.getElementById('taskParentSubId').value = subId;
+
+            if (task) {
+                document.getElementById('modalTaskTitle').innerText = 'Editar Tarefa';
+                document.getElementById('taskId').value = task.id;
+                document.getElementById('taskName').value = task.name;
+                document.getElementById('taskDesc').value = task.description || '';
+            } else {
+                document.getElementById('modalTaskTitle').innerText = 'Nova Tarefa';
+                document.getElementById('taskId').value = '';
+            }
+            modalTask.classList.remove('hidden');
+        }
+
+        document.getElementById('formTask').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const subId = document.getElementById('taskParentSubId').value;
+            const taskId = document.getElementById('taskId').value;
+            const name = document.getElementById('taskName').value.trim();
+            const description = document.getElementById('taskDesc').value.trim();
+
+            let targetSub = null;
+            for (const act of activitiesData) {
+                const sub = act.subactivities.find(s => s.id === subId);
+                if (sub) {
+                    targetSub = sub;
+                    break;
+                }
+            }
+            if (!targetSub) return;
+
+            if (taskId) {
+                const taskIdx = targetSub.tasks.findIndex(t => t.id === taskId);
+                if (taskIdx !== -1) {
+                    targetSub.tasks[taskIdx].name = name;
+                    targetSub.tasks[taskIdx].description = description;
+                }
+                showToast('Tarefa atualizada!', 'success');
+            } else {
+                const newTask = {
+                    id: 'tsk_' + Date.now(),
+                    name,
+                    description,
+                    status: 'pendente' // 'pendente' or 'concluida'
+                };
+                if (!targetSub.tasks) targetSub.tasks = [];
+                targetSub.tasks.push(newTask);
+                showToast('Tarefa criada!', 'success');
+            }
+
+            saveActivities();
+            modalTask.classList.add('hidden');
+            renderDashboard();
+        });
+
+        function deleteTask(subId, taskId) {
+            let targetSub = null;
+            for (const act of activitiesData) {
+                const sub = act.subactivities.find(s => s.id === subId);
+                if (sub) {
+                    targetSub = sub;
+                    break;
+                }
+            }
+            if (!targetSub) return;
+
+            targetSub.tasks = targetSub.tasks.filter(t => t.id !== taskId);
+            saveActivities();
+            renderDashboard();
+            showToast('Tarefa excluída.', 'info');
+        }
+
+        function toggleTaskStatus(subId, taskId) {
+            let targetSub = null;
+            for (const act of activitiesData) {
+                const sub = act.subactivities.find(s => s.id === subId);
+                if (sub) {
+                    targetSub = sub;
+                    break;
+                }
+            }
+            if (!targetSub) return;
+
+            const t = targetSub.tasks.find(x => x.id === taskId);
+            if (t) {
+                t.status = t.status === 'concluida' ? 'pendente' : 'concluida';
+                saveActivities();
+                renderDashboard();
+            }
+        }
+
+        function renderDashboard() {
+            // Update Overview Statistics
+            const totalActs = activitiesData.length;
+            const completedActs = activitiesData.filter(a => a.status === 'concluida').length;
+            const pendingActs = totalActs - completedActs;
+            
+            let totalTasksCount = 0;
+            activitiesData.forEach(a => {
+                a.subactivities.forEach(s => {
+                    totalTasksCount += (s.tasks ? s.tasks.length : 0);
+                });
+            });
+
+            document.getElementById('statTotal').innerText = totalActs;
+            document.getElementById('statInProgress').innerText = pendingActs;
+            document.getElementById('statCompleted').innerText = completedActs;
+            document.getElementById('statTotalTasks').innerText = totalTasksCount;
+
+            // Filter activities according to Active Tab and Search Query
+            const filtered = activitiesData.filter(act => {
+                const matchesTab = (activeTab === 'all') || 
+                                   (activeTab === 'pending' && act.status === 'em_andamento') ||
+                                   (activeTab === 'completed' && act.status === 'concluida');
+
+                const matchesSearch = !searchQuery || act.name.toLowerCase().includes(searchQuery) || act.description.toLowerCase().includes(searchQuery);
+
+                return matchesTab && matchesSearch;
+            });
+
+            const container = document.getElementById('activitiesContainer');
+            const emptyState = document.getElementById('emptyState');
+
+            if (filtered.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            emptyState.classList.remove('flex');
+
+            container.innerHTML = filtered.map(act => {
+                const isActCompleted = act.status === 'concluida';
+                const subCount = act.subactivities ? act.subactivities.length : 0;
+                const isActCollapsed = collapsedActivities.has(act.id);
+                
+                // Progress calculation
+                let totalSubTasks = 0;
+                let completedSubTasks = 0;
+                if (act.subactivities) {
+                    act.subactivities.forEach(s => {
+                        if (s.tasks) {
+                            totalSubTasks += s.tasks.length;
+                            completedSubTasks += s.tasks.filter(t => t.status === 'concluida').length;
+                        }
+                    });
+                }
+                const progressPct = totalSubTasks > 0 ? Math.round((completedSubTasks / totalSubTasks) * 100) : (isActCompleted ? 100 : 0);
+
+                return `
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition duration-200">
+                        <!-- Card Top Header with Profile Picture Avatar -->
+                        <div class="p-5 pb-4 flex items-start gap-3.5 relative border-b border-slate-100">
+                            <!-- Profile Picture / Avatar Thumbnail -->
+                            <div class="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 shadow-xs shrink-0 overflow-hidden flex items-center justify-center text-slate-400">
+                                ${act.image 
+                                    ? `<img src="${act.image}" class="w-full h-full object-cover" alt="Foto de Perfil">` 
+                                    : `<i class="fa-solid fa-list-check text-2xl text-blue-500"></i>`}
+                            </div>
+
+                            <div class="flex-1 min-w-0 pr-14">
+                                <div class="flex items-center gap-2 mb-1">
+                                    ${isActCompleted 
+                                        ? `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1"><i class="fa-solid fa-check"></i> Concluída</span>`
+                                        : `<span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1"><i class="fa-solid fa-clock"></i> Em Andamento</span>`}
+                                </div>
+                                <h3 class="text-base font-bold text-slate-900 truncate ${isActCompleted ? 'line-through text-slate-400' : ''}" title="${escapeHtml(act.name)}">${escapeHtml(act.name)}</h3>
+                                <p class="text-xs text-slate-500 line-clamp-2 mt-0.5">${escapeHtml(act.description)}</p>
+                            </div>
+
+                            <!-- Card Actions -->
+                            <div class="absolute top-4 right-4 flex items-center gap-1">
+                                <button onclick="openActivityModalById('${act.id}')" title="Editar Atividade" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs transition">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button onclick="deleteActivity('${act.id}')" title="Excluir Atividade" class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center text-xs transition">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="px-5 py-3 bg-slate-50/50">
+                            <div class="flex justify-between items-center text-xs text-slate-500 mb-1">
+                                <span class="font-medium text-[11px] uppercase tracking-wider text-slate-500">Progresso</span>
+                                <span class="font-bold text-slate-700 text-xs">${progressPct}%</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-200/70 rounded-full overflow-hidden">
+                                <div class="h-full ${isActCompleted ? 'bg-emerald-500' : 'bg-blue-600'} transition-all duration-300" style="width: ${progressPct}%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Subactivities Accordion Toggle Header -->
+                        <div class="flex items-center justify-between px-5 py-3 bg-slate-100/60 border-t border-b border-slate-200/60">
+                            <button onclick="toggleActivityExpand('${act.id}')" class="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-wider hover:text-blue-600 transition flex-1 text-left">
+                                <i class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200 ${isActCollapsed ? '-rotate-90' : ''}"></i>
+                                <span>Subatividades (${subCount})</span>
+                            </button>
+                            <button onclick="openSubactivityModal('${act.id}')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline">
+                                <i class="fa-solid fa-plus text-[10px]"></i> Adicionar
+                            </button>
+                        </div>
+
+                        <!-- Collapsible Subactivities Content -->
+                        ${!isActCollapsed ? `
+                            <div class="p-4 bg-slate-50/40 space-y-2.5 flex-1">
+                                ${subCount === 0 ? `<p class="text-[11px] text-slate-400 italic text-center py-2">Nenhuma subatividade cadastrada.</p>` : ''}
+
+                                ${act.subactivities.map(sub => {
+                                    const isSubCompleted = sub.status === 'concluida';
+                                    const tasks = sub.tasks || [];
+                                    const taskCount = tasks.length;
+                                    const completedTasks = tasks.filter(t => t.status === 'concluida').length;
+                                    const isSubCollapsed = collapsedSubactivities.has(sub.id);
+
+                                    return `
+                                        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                                            <!-- Subactivity Item Header with Collapse Arrow -->
+                                            <div class="p-3 flex items-center justify-between gap-2 bg-white">
+                                                <div class="flex items-center gap-2 flex-1 min-w-0">
+                                                    <button onclick="toggleSubactivityExpand('${sub.id}')" class="text-slate-400 hover:text-slate-600 p-1 transition" title="Expandir/Recolher Tarefas">
+                                                        <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 ${isSubCollapsed ? '-rotate-90' : ''}"></i>
+                                                    </button>
+                                                    <button onclick="toggleSubactivityStatus('${act.id}', '${sub.id}')" class="text-slate-400 hover:text-emerald-500 transition shrink-0" title="Alternar status">
+                                                        <i class="${isSubCompleted ? 'fa-solid fa-circle-check text-emerald-500 text-base' : 'fa-regular fa-circle text-base'}"></i>
+                                                    </button>
+                                                    <div class="min-w-0 flex-1">
+                                                        <div class="flex items-center gap-2">
+                                                            <h4 class="text-xs font-semibold text-slate-800 truncate ${isSubCompleted ? 'line-through text-slate-400' : ''}">${escapeHtml(sub.name)}</h4>
+                                                            <span class="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md font-medium shrink-0">
+                                                                <i class="fa-solid fa-list-ul mr-0.5"></i>${completedTasks}/${taskCount}
+                                                            </span>
+                                                        </div>
+                                                        ${sub.description ? `<p class="text-[11px] text-slate-500 line-clamp-1 mt-0.5">${escapeHtml(sub.description)}</p>` : ''}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="flex items-center gap-1 shrink-0">
+                                                    <button onclick="openTaskModal('${sub.id}')" title="Adicionar Tarefa" class="text-slate-400 hover:text-indigo-600 p-1 text-xs">
+                                                        <i class="fa-solid fa-plus"></i>
+                                                    </button>
+                                                    <button onclick="openSubactivityModalById('${act.id}', '${sub.id}')" title="Editar" class="text-slate-400 hover:text-blue-600 p-1 text-xs">
+                                                        <i class="fa-solid fa-pen"></i>
+                                                    </button>
+                                                    <button onclick="deleteSubactivity('${act.id}', '${sub.id}')" title="Excluir" class="text-slate-400 hover:text-rose-600 p-1 text-xs">
+                                                        <i class="fa-solid fa-trash-can"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Nested Tasks List (Collapsible) -->
+                                            ${(!isSubCollapsed && taskCount > 0) ? `
+                                                <div class="bg-slate-50/80 p-2.5 border-t border-slate-100 space-y-1.5 pl-8">
+                                                    <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                                                        Tarefas
+                                                    </div>
+                                                    ${tasks.map(t => {
+                                                        const isTaskDone = t.status === 'concluida';
+                                                        return `
+                                                            <div class="flex items-center justify-between gap-2 text-xs bg-white p-2 rounded-lg border border-slate-100 shadow-2xs">
+                                                                <label class="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
+                                                                    <input type="checkbox" ${isTaskDone ? 'checked' : ''} onchange="toggleTaskStatus('${sub.id}', '${t.id}')" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                                                    <span class="text-slate-700 truncate ${isTaskDone ? 'line-through text-slate-400' : ''}">${escapeHtml(t.name)}</span>
+                                                                </label>
+                                                                <div class="flex items-center gap-1 shrink-0">
+                                                                    <button onclick="openTaskModalById('${sub.id}', '${t.id}')" class="text-slate-300 hover:text-blue-600 text-[10px] p-0.5" title="Editar Tarefa">
+                                                                        <i class="fa-solid fa-pen"></i>
+                                                                    </button>
+                                                                    <button onclick="deleteTask('${sub.id}', '${t.id}')" class="text-slate-300 hover:text-rose-600 text-[10px] p-0.5" title="Excluir Tarefa">
+                                                                        <i class="fa-solid fa-xmark"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        `;
+                                                    }).join('')}
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        ` : ''}
+
+                        <!-- Card Footer Status Toggle Button -->
+                        <div class="p-3 bg-slate-100/50 border-t border-slate-100 text-center mt-auto">
+                            <button onclick="toggleActivityStatus('${act.id}')" class="w-full py-1.5 text-xs font-semibold rounded-xl border transition ${isActCompleted ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700'}">
+                                <i class="fa-solid ${isActCompleted ? 'fa-rotate-left mr-1' : 'fa-check mr-1'}"></i>
+                                ${isActCompleted ? 'Reabrir Atividade' : 'Concluir Atividade'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openActivityModalById(actId) {
+            const act = activitiesData.find(a => a.id === actId);
+            if (act) openActivityModal(act);
+        }
+
+        function openSubactivityModalById(actId, subId) {
+            const act = activitiesData.find(a => a.id === actId);
+            if (!act) return;
+            const sub = act.subactivities.find(s => s.id === subId);
+            if (sub) openSubactivityModal(actId, sub);
+        }
+
+        function openTaskModalById(subId, taskId) {
+            let targetSub = null;
+            for (const act of activitiesData) {
+                const sub = act.subactivities.find(s => s.id === subId);
+                if (sub) {
+                    targetSub = sub;
+                    break;
+                }
+            }
+            if (!targetSub) return;
+            const task = targetSub.tasks.find(t => t.id === taskId);
+            if (task) openTaskModal(subId, task);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+
+        window.addEventListener('load', () => {
+            const session = getSessionUser();
+            if (session && session.email) {
+                const users = getUsers();
+                const userExists = users.find(u => u.email === session.email);
+                if (userExists) {
+                    currentUser = { email: session.email };
+                    initDashboard();
+                    return;
+                }
+            }
+            // If no active session, present authentication screen
+            document.getElementById('authScreen').classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>
